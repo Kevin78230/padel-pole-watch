@@ -5,12 +5,13 @@
   <title>Padel Pole Watch</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     body { margin:0; font-family: Arial, sans-serif; }
-    #map { height:100vh; }
+    #map { height:100vh; width:100%; }
+
     #searchBox {
       position:absolute;
       top:15px;
@@ -22,6 +23,7 @@
       border-radius:10px;
       box-shadow:0 4px 12px rgba(0,0,0,0.2);
     }
+
     #searchInput {
       width:280px;
       padding:8px;
@@ -39,6 +41,9 @@
 
 <div id="map"></div>
 
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
 
 // ================= MAP INIT =================
@@ -46,7 +51,8 @@
 var map = L.map('map').setView([46.6, 2.4], 6);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap'
 }).addTo(map);
 
 
@@ -79,7 +85,8 @@ searchInput.addEventListener("input", function () {
 
         showAddButton(place.display_name, lat, lon);
 
-      });
+      })
+      .catch(err => console.log(err));
 
   }, 500);
 });
