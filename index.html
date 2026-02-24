@@ -61,43 +61,36 @@ fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFC
   .then(res => res.text())
   .then(csvText => {
 
-    // Convert CSV to array of lines
-    const lines = csvText.trim().split("\n");
-    const headers = lines.shift().split(",");
+    const rows = csvText.split("\n").slice(1); // ignore header
 
-    lines.forEach(line => {
-      const values = line.split(",");
+    rows.forEach(row => {
 
-      const item = {};
-      headers.forEach((h, i) => {
-        item[h.trim()] = values[i] ? values[i].trim() : "";
-      });
+      const cols = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+      if (!cols || cols.length < 7) return;
 
-      const lat = parseFloat(item["Latitude"]);
-      const lon = parseFloat(item["Longitude"]);
+      const club = cols[1]?.replace(/"/g, "");
+      const address = cols[2]?.replace(/"/g, "");
+      const lat = parseFloat(cols[3]);
+      const lon = parseFloat(cols[4]);
+      const danger = cols[6]?.replace(/"/g, "");
 
-      if (!lat || !lon) return; // skip invalid
+      if (!lat || !lon) return;
 
-      // Danger field
-      let dangerColor = "red";
-      if (item["Niveau de danger"] && item["Niveau de danger"].toLowerCase().includes("🟢")) {
-        dangerColor = "green";
-      }
-      if (item["Niveau de danger"] && item["Niveau de danger"].toLowerCase().includes("🟠")) {
-        dangerColor = "orange";
-      }
+      let color = "red";
+      if (danger?.includes("🟢")) color = "green";
+      if (danger?.includes("🟠")) color = "orange";
 
       L.circleMarker([lat, lon], {
         radius: 8,
-        color: dangerColor,
-        fillColor: dangerColor,
+        color: color,
+        fillColor: color,
         fillOpacity: 0.7
       })
       .addTo(map)
       .bindPopup(`
-        <strong>${item["Nom du club"] || ""}</strong><br>
-        ${item["Adresse complète"] || ""}<br>
-        Danger : ${item["Niveau de danger"] || ""}
+        <strong>${club}</strong><br>
+        ${address}<br>
+        Danger : ${danger}
       `);
 
     });
