@@ -1,238 +1,200 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>Padel Pole Watch</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8" />
+<title>Padel Pole Watch</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <style>
-    body { margin:0; font-family: Arial, sans-serif; }
-    #map { height:100vh; width:100%; }
+<style>
+body {
+  margin:0;
+  font-family: Arial, sans-serif;
+  display:flex;
+  height:100vh;
+}
 
-    #statsPanel {
+#sidebar {
+  width:280px;
+  background:#111a2e;
+  color:white;
+  padding:20px;
+  box-sizing:border-box;
+}
+
+#sidebar h2 {
+  margin-top:0;
+}
+
+.stat {
+  margin:6px 0;
+}
+
+.filter {
+  margin-top:15px;
+}
+
+.filter label {
+  display:block;
+  margin:5px 0;
+  cursor:pointer;
+}
+
+#map {
+  flex:1;
+}
+
+#searchBox {
   position:absolute;
-  top:100px;
-  left:20px;
+  top:15px;
+  left:50%;
+  transform:translateX(-50%);
   z-index:1000;
   background:white;
-  padding:15px;
-  border-radius:12px;
+  padding:10px;
+  border-radius:10px;
   box-shadow:0 4px 12px rgba(0,0,0,0.2);
-  font-size:14px;
-  line-height:1.6;
 }
-  
-    
-    
-    #searchBox {
-      position:absolute;
-      top:15px;
-      left:50%;
-      transform:translateX(-50%);
-      z-index:1000;
-      background:white;
-      padding:10px;
-      border-radius:10px;
-      box-shadow:0 4px 12px rgba(0,0,0,0.2);
-    }
 
-    #searchInput {
-      width:280px;
-      padding:8px;
-      border-radius:6px;
-      border:1px solid #ccc;
-    }
-  </style>
+#searchInput {
+  width:280px;
+  padding:8px;
+  border-radius:6px;
+  border:1px solid #ccc;
+}
+</style>
 </head>
 
 <body>
 
-<div id="searchBox">
-  <input type="text" id="searchInput" placeholder="Rechercher un club ou une adresse...">
+<div id="sidebar">
+  <h2>📊 Statistiques</h2>
+  <div class="stat">Total : <span id="totalCount">0</span></div>
+  <div class="stat">🟢 Safe : <span id="greenCount">0</span></div>
+  <div class="stat">🟠 Moyen : <span id="orangeCount">0</span></div>
+  <div class="stat">🔴 Dangereux : <span id="redCount">0</span></div>
+
+  <div class="filter">
+    <h3>🎛️ Filtres</h3>
+    <label><input type="checkbox" id="filterGreen" checked> 🟢 Safe</label>
+    <label><input type="checkbox" id="filterOrange" checked> 🟠 Moyen</label>
+    <label><input type="checkbox" id="filterRed" checked> 🔴 Dangereux</label>
+  </div>
 </div>
 
-<div id="statsPanel">
-  <h3>📊 Statistiques</h3>
-  <div>Total : <span id="totalCount">0</span></div>
-  <div>🟢 Safe : <span id="greenCount">0</span></div>
-  <div>🟠 Moyen : <span id="orangeCount">0</span></div>
-  <div>🔴 Dangereux : <span id="redCount">0</span></div>
-</div>
-  
 <div id="map"></div>
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<div id="searchBox">
+  <input type="text" id="searchInput" placeholder="Rechercher un club...">
+</div>
 
 <script>
-
-// ================= MAP INIT =================
 
 var map = L.map('map').setView([46.6, 2.4], 6);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap'
+  maxZoom: 19
 }).addTo(map);
 
-// ================= CHARGEMENT DES POTEAUX EXISTANTS (GOOGLE SHEETS TSV) =================
+let markers = [];
 
-fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFChkNLfpGAACMs5Jlj-ljpPakGQrlQW3Jd-zvq8mCJ3vEqz6Cva4oLQ5/pub?output=tsv")
-  .then(res => res.text())
-  .then(text => {
+// ================= CHARGEMENT GOOGLE SHEETS TSV =================
 
-    const rows = text.trim().split("\n");
-    rows.shift(); // remove header
+function loadMarkers() {
 
-    let total = 0;
-    let green = 0;
-    let orange = 0;
-    let red = 0;
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
 
-    rows.forEach(row => {
+  fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFChkNLfpGAACMs5Jlj-ljpPakGQrlQW3Jd-zvq8mCJ3vEqz6Cva4oLQ5/pub?output=tsv")
+    .then(res => res.text())
+    .then(text => {
 
-      const cols = row.split("\t");
+      const rows = text.trim().split("\n");
+      rows.shift();
 
-      const club = cols[1];
-      const address = cols[2];
-      const lat = parseFloat(cols[3]);
-      const lon = parseFloat(cols[4]);
-      const danger = cols[6];
+      let total = 0, green = 0, orange = 0, red = 0;
 
-      if (!lat || !lon) return;
+      rows.forEach(row => {
 
-      total++;
+        const cols = row.split("\t");
 
-      let color = "red";
-      red++;
+        const club = cols[1];
+        const address = cols[2];
+        const lat = parseFloat(cols[3]);
+        const lon = parseFloat(cols[4]);
+        const danger = cols[6];
 
-      if (danger && danger.includes("🟢")) {
-        color = "green";
-        green++;
-        red--;
-      }
+        if (!lat || !lon) return;
 
-      if (danger && danger.includes("🟠")) {
-        color = "orange";
-        orange++;
-        red--;
-      }
+        total++;
 
-      L.circleMarker([lat, lon], {
-        radius: 8,
-        color: color,
-        fillColor: color,
-        fillOpacity: 0.7
-      })
-      .addTo(map)
-      .bindPopup(`
-        <strong>${club}</strong><br>
-        ${address}<br>
-        Danger : ${danger}
-      `);
+        let color = "red";
+        red++;
+
+        if (danger.includes("🟢")) {
+          color = "green";
+          green++; red--;
+        }
+        if (danger.includes("🟠")) {
+          color = "orange";
+          orange++; red--;
+        }
+
+        if (
+          (color === "green" && !filterGreen.checked) ||
+          (color === "orange" && !filterOrange.checked) ||
+          (color === "red" && !filterRed.checked)
+        ) return;
+
+        const marker = L.circleMarker([lat, lon], {
+          radius: 8,
+          color: color,
+          fillColor: color,
+          fillOpacity: 0.7
+        })
+        .addTo(map)
+        .bindPopup(`<strong>${club}</strong><br>${address}<br>${danger}`);
+
+        markers.push(marker);
+
+      });
+
+      totalCount.textContent = total;
+      greenCount.textContent = green;
+      orangeCount.textContent = orange;
+      redCount.textContent = red;
 
     });
+}
 
-    // Update stats display
-    document.getElementById("totalCount").textContent = total;
-    document.getElementById("greenCount").textContent = green;
-    document.getElementById("orangeCount").textContent = orange;
-    document.getElementById("redCount").textContent = red;
+loadMarkers();
 
-  })
-  .catch(err => console.error("Erreur chargement TSV:", err));
+filterGreen.onchange = loadMarkers;
+filterOrange.onchange = loadMarkers;
+filterRed.onchange = loadMarkers;
 
-// ================= RECHERCHE NOMINATIM =================
-
-const searchInput = document.getElementById("searchInput");
-let searchTimeout;
+// ================= RECHERCHE =================
 
 searchInput.addEventListener("input", function () {
-
-  clearTimeout(searchTimeout);
 
   const query = this.value.trim();
   if (query.length < 3) return;
 
-  searchTimeout = setTimeout(() => {
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+    .then(res => res.json())
+    .then(data => {
 
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
-      .then(res => res.json())
-      .then(data => {
+      if (!data.length) return;
 
-        if (!data.length) return;
+      const lat = parseFloat(data[0].lat);
+      const lon = parseFloat(data[0].lon);
 
-        const place = data[0];
+      map.setView([lat, lon], 16);
+    });
 
-        const lat = parseFloat(place.lat);
-        const lon = parseFloat(place.lon);
-
-        map.setView([lat, lon], 16);
-
-        showAddButton(place.display_name, lat, lon);
-
-      })
-      .catch(err => console.log(err));
-
-  }, 500);
 });
-
-
-// ================= BOUTON AJOUT =================
-
-function showAddButton(address, lat, lon) {
-
-  const existing = document.getElementById("addPoleBox");
-  if (existing) existing.remove();
-
-  const box = document.createElement("div");
-  box.id = "addPoleBox";
-  box.style.position = "absolute";
-  box.style.bottom = "20px";
-  box.style.left = "50%";
-  box.style.transform = "translateX(-50%)";
-  box.style.background = "#111a2e";
-  box.style.padding = "20px";
-  box.style.borderRadius = "14px";
-  box.style.boxShadow = "0 15px 40px rgba(0,0,0,.5)";
-  box.style.zIndex = "1000";
-  box.style.color = "white";
-
-  box.innerHTML = `
-    <div style="margin-bottom:10px;font-weight:600;">📍 ${address}</div>
-    <button id="confirmAddPole" style="
-      padding:12px 18px;
-      border:none;
-      border-radius:10px;
-      background:#ff6b6b;
-      color:white;
-      font-weight:bold;
-      font-size:14px;
-      cursor:pointer;
-    ">➕ Ajouter un poteau ici</button>
-  `;
-
-  document.body.appendChild(box);
-
-  document.getElementById("confirmAddPole").onclick = function () {
-
-    const baseFormURL = "https://docs.google.com/forms/d/e/1FAIpQLScvtTYbWyZKuAvAhX1Xhl2eM-WEaRci7QqB7MvXIN-BdwYciQ/viewform?usp=pp_url";
-
-    const clubName = address.split(",")[0];
-
-    const formURL =
-      `${baseFormURL}` +
-      `&entry.1761113382=${encodeURIComponent(clubName)}` +
-      `&entry.1236097005=${encodeURIComponent(address)}` +
-      `&entry.2100892865=${encodeURIComponent(lat)}` +
-      `&entry.1484112050=${encodeURIComponent(lon)}`;
-
-    window.open(formURL, "_blank");
-  };
-}
 
 </script>
 
