@@ -55,36 +55,55 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap'
 }).addTo(map);
 
-// ================= CHARGEMENT DES POTEAUX EXISTANTS =================
+// ================= CHARGEMENT DES POTEAUX EXISTANTS (GOOGLE SHEETS CSV) =================
 
-fetch("data/poles.json")
-  .then(response => response.json())
-  .then(data => {
+fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFChkNLfpGAACMs5Jlj-ljpPakGQrlQW3Jd-zvq8mCJ3vEqz6Cva4oLQ5/pub?gid=53515521&single=true&output=csv")
+  .then(res => res.text())
+  .then(csvText => {
 
-    data.items.forEach(p => {
+    // Convert CSV to array of lines
+    const lines = csvText.trim().split("\n");
+    const headers = lines.shift().split(",");
 
-      let color = "red";
+    lines.forEach(line => {
+      const values = line.split(",");
 
-      if (p.danger === "green") color = "green";
-      if (p.danger === "orange") color = "orange";
+      const item = {};
+      headers.forEach((h, i) => {
+        item[h.trim()] = values[i] ? values[i].trim() : "";
+      });
 
-      L.circleMarker([p.lat, p.lng], {
+      const lat = parseFloat(item["Latitude"]);
+      const lon = parseFloat(item["Longitude"]);
+
+      if (!lat || !lon) return; // skip invalid
+
+      // Danger field
+      let dangerColor = "red";
+      if (item["Niveau de danger"] && item["Niveau de danger"].toLowerCase().includes("🟢")) {
+        dangerColor = "green";
+      }
+      if (item["Niveau de danger"] && item["Niveau de danger"].toLowerCase().includes("🟠")) {
+        dangerColor = "orange";
+      }
+
+      L.circleMarker([lat, lon], {
         radius: 8,
-        color: color,
-        fillColor: color,
+        color: dangerColor,
+        fillColor: dangerColor,
         fillOpacity: 0.7
       })
       .addTo(map)
       .bindPopup(`
-        <strong>${p.club_name}</strong><br>
-        ${p.city || ""}<br>
-        Danger : ${p.danger}
+        <strong>${item["Nom du club"] || ""}</strong><br>
+        ${item["Adresse complète"] || ""}<br>
+        Danger : ${item["Niveau de danger"] || ""}
       `);
 
     });
 
   })
-  .catch(error => console.log("Erreur chargement poteaux:", error));
+  .catch(err => console.error("Erreur CSV poteaux:", err));
 
 // ================= RECHERCHE NOMINATIM =================
 
