@@ -1,423 +1,144 @@
-<!doctype html>
-<html lang="fr">
+<!DOCTYPE html>
+<html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Padel Pole Watch 🥊🧱</title>
+  <title>Padel Pole Watch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="preconnect" href="https://unpkg.com" />
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
   <style>
-    :root { --bg:#0b1220; --card:#111a2e; --muted:#a8b3cf; --txt:#eef2ff; --accent:#7cdb7b; --warn:#ffcc66; --danger:#ff6b6b; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--txt); }
-    header { padding:14px 16px; background:linear-gradient(180deg, #0f1b34, #0b1220); border-bottom:1px solid rgba(255,255,255,.07); }
-    header h1 { margin:0; font-size:18px; display:flex; align-items:center; gap:10px; }
-    header .sub { margin-top:6px; color:var(--muted); font-size:13px; }
-    .wrap { display:grid; grid-template-columns: 360px 1fr; min-height: calc(100vh - 74px); }
-    .panel { padding:14px; border-right:1px solid rgba(255,255,255,.07); background:rgba(255,255,255,.02); }
-    .card { background:var(--card); border:1px solid rgba(255,255,255,.07); border-radius:14px; padding:12px; margin-bottom:12px; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-    .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-    .btn {
-      cursor:pointer; border:0; padding:10px 12px; border-radius:12px;
-      background:rgba(124,219,123,.15); color:var(--txt); font-weight:600;
+    body { margin:0; font-family: Arial, sans-serif; }
+    #map { height:100vh; }
+    #searchBox {
+      position:absolute;
+      top:15px;
+      left:50%;
+      transform:translateX(-50%);
+      z-index:1000;
+      background:white;
+      padding:10px;
+      border-radius:10px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.2);
     }
-    .btn:hover { background:rgba(124,219,123,.25); }
-    .btn.secondary { background:rgba(255,255,255,.08); }
-    .btn.secondary:hover { background:rgba(255,255,255,.12); }
-    input[type="search"]{
-      width:100%; padding:10px 12px; border-radius:12px;
-      border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.2); color:var(--txt);
-      outline:none;
-    }
-    label { font-size:13px; color:var(--muted); display:flex; gap:8px; align-items:center; cursor:pointer; }
-    .chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
-    .chip { font-size:12px; padding:6px 10px; border-radius:999px; border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.15); }
-    .chip.green { border-color: rgba(124,219,123,.35); }
-    .chip.orange { border-color: rgba(255,204,102,.35); }
-    .chip.red { border-color: rgba(255,107,107,.35); }
-    #map { width:100%; height: calc(100vh - 74px); }
-    .kpi { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
-    .kpi .big { font-size:22px; font-weight:800; }
-    .kpi .small { font-size:12px; color:var(--muted); }
-    .foot { font-size:12px; color:var(--muted); }
-    .foot a { color:var(--txt); text-decoration:none; border-bottom:1px dashed rgba(255,255,255,.25); }
-    .foot a:hover{ border-bottom-color: rgba(255,255,255,.6); }
-
-    /* Leaflet popup dark */
-    .leaflet-popup-content-wrapper, .leaflet-popup-tip { background:#0f1730; color:var(--txt); border:1px solid rgba(255,255,255,.08); }
-    .leaflet-popup-content { margin: 10px 12px; }
-    .popup-title { font-weight:800; margin:0 0 6px; }
-    .popup-meta { color:var(--muted); font-size:12px; margin-bottom:10px; }
-    .badge { display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.12); }
-    .badge.green { border-color: rgba(124,219,123,.45); }
-    .badge.orange { border-color: rgba(255,204,102,.45); }
-    .badge.red { border-color: rgba(255,107,107,.45); }
-    .popup-img { width:100%; max-height:180px; object-fit:cover; border-radius:10px; border:1px solid rgba(255,255,255,.08); margin-top:10px; }
-    .popup-actions { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
-    .a { color:var(--txt); text-decoration:none; font-weight:700; font-size:12px; padding:8px 10px; border-radius:10px; background:rgba(255,255,255,.08); }
-    .a:hover { background:rgba(255,255,255,.12); }
-
-    @media (max-width: 980px){
-      .wrap{ grid-template-columns: 1fr; }
-      .panel{ border-right:0; border-bottom:1px solid rgba(255,255,255,.07); }
-      #map{ height: 70vh; }
+    #searchInput {
+      width:280px;
+      padding:8px;
+      border-radius:6px;
+      border:1px solid #ccc;
     }
   </style>
 </head>
+
 <body>
-  <header>
-    <h1>Padel Pole Watch 🥊🧱 <span style="opacity:.7;font-weight:600;">— la carte des poteaux (moussés… ou pas)</span></h1>
-    <div class="sub">Objectif : recenser les poteaux “dangereux” et motiver les clubs à mettre de la mousse. Fun, libre, communautaire.</div>
-  </header>
 
-  <div class="wrap">
-    <aside class="panel">
-      <div class="card">
-        <div class="row" style="justify-content:space-between;">
-          <button class="btn" id="btnAdd">➕ Ajouter un poteau</button>
-          <button class="btn secondary" id="btnLocate">📍 Me localiser</button>
-        </div>
-        <div style="height:10px"></div>
-        <input id="search" type="search" placeholder="Rechercher un club / ville / pays…" />
-        <div class="chips">
-          <span class="chip green">🟢 Safe</span>
-          <span class="chip orange">🟠 Moyen</span>
-          <span class="chip red">🔴 Dangereux</span>
-        </div>
-        <div style="height:10px"></div>
-        <div class="row" style="gap:14px;">
-          <label><input type="checkbox" id="onlyNoFoam"> Afficher seulement <b>sans mousse</b></label>
-          <label><input type="checkbox" id="onlyDanger"> Afficher seulement <b>🔴 dangereux</b></label>
-        </div>
-      </div>
+<div id="searchBox">
+  <input type="text" id="searchInput" placeholder="Rechercher un club ou une adresse...">
+</div>
 
-      <div class="card">
-        <div class="kpi">
-          <div>
-            <div class="big" id="kpiTotal">–</div>
-            <div class="small">poteaux recensés</div>
-          </div>
-          <div>
-            <div class="big" id="kpiNoFoam">–</div>
-            <div class="small">sans mousse</div>
-          </div>
-        </div>
-        <div style="height:10px"></div>
-        <div class="kpi">
-          <div>
-            <div class="big" id="kpiDanger">–</div>
-            <div class="small">🔴 dangereux</div>
-          </div>
-          <div>
-            <div class="big" id="kpiCountries">–</div>
-            <div class="small">pays</div>
-          </div>
-        </div>
-      </div>
+<div id="map"></div>
 
-      <div class="card foot">
-        <div><b>Contribuer</b> : clique “Ajouter un poteau” → formulaire.</div>
-        <div style="margin-top:8px;">
-          Astuce : une photo + la date = info fiable.  
-        </div>
-        <div style="margin-top:10px;opacity:.85;">
-          Données : <code>data/poles.json</code> (ou via un Google Form si tu veux).
-        </div>
-      </div>
-    </aside>
+<script>
 
-    <main>
-      <div id="map"></div>
-    </main>
-  </div>
+// ================= MAP INIT =================
 
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
+var map = L.map('map').setView([46.6, 2.4], 6);
 
-  <script>
-    // --- CONFIG ---
-    // Option A (zéro backend) : les données dans data/poles.json
-    const DATA_URL = "data/poles.json";
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19
+}).addTo(map);
 
-    // Option B : si tu veux un Google Form, mets l'URL ici (sinon laisse vide)
-    const GOOGLE_FORM_URL = ""; // ex: "https://docs.google.com/forms/d/e/XXXX/viewform"
 
-    // Option C : GitHub Issue pré-remplie (mets ton repo)
-  const GITHUB_ISSUE_TEMPLATE_URL =
-  "https://github.com/Kevin78230/padel-pole-watch/issues/new?title=%F0%9F%A7%B1%20Nouveau%20poteau%20%C3%A0%20ajouter&body=" +
-  encodeURIComponent(
-name: "🧱 Ajouter un poteau"
-description: "Proposer un club/terrain et l’état du poteau (mousse ou pas)."
-title: "🧱 [Ville] Club – poteau à ajouter"
-labels: ["contribution", "poteau"]
-body:
-  - type: markdown
-    attributes:
-      value: |
-        Merci ! 🙌  
-        **Astuce photo :** une fois l’issue créée, tu peux **glisser-déposer une photo** dans le commentaire (ou coller l’image). GitHub l’héberge automatiquement.
+// ================= RECHERCHE NOMINATIM =================
 
-  - type: input
-    id: club
-    attributes:
-      label: Nom du club
-      placeholder: "Ex: Padel Central"
-    validations:
-      required: true
+const searchInput = document.getElementById("searchInput");
+let searchTimeout;
 
-  - type: input
-    id: ville
-    attributes:
-      label: Ville
-      placeholder: "Ex: Lyon"
-    validations:
-      required: true
+searchInput.addEventListener("input", function () {
 
-  - type: input
-    id: pays
-    attributes:
-      label: Pays
-      placeholder: "Ex: France"
-    validations:
-      required: true
+  clearTimeout(searchTimeout);
 
-  - type: input
-    id: coords
-    attributes:
-      label: Coordonnées (lat, lng)
-      description: "Tu peux les récupérer sur Google Maps (clic droit) ou OpenStreetMap."
-      placeholder: "Ex: 45.7640, 4.8357"
-    validations:
-      required: true
+  const query = this.value.trim();
+  if (query.length < 3) return;
 
-  - type: input
-    id: terrain
-    attributes:
-      label: Terrain (optionnel)
-      placeholder: "Ex: Terrain 2, côté bar"
+  searchTimeout = setTimeout(() => {
 
-  - type: dropdown
-    id: mousse
-    attributes:
-      label: Mousse sur le poteau ?
-      options:
-        - "✅ Oui"
-        - "❌ Non"
-    validations:
-      required: true
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`)
+      .then(res => res.json())
+      .then(data => {
 
-  - type: input
-    id: details_mousse
-    attributes:
-      label: Détails mousse (épaisseur / état)
-      placeholder: "Ex: 25 mm, bien fixée / Ex: mousse fine, abîmée"
+        if (!data.length) return;
 
-  - type: dropdown
-    id: danger
-    attributes:
-      label: Niveau de danger
-      options:
-        - "🟢 Safe"
-        - "🟠 Moyen"
-        - "🔴 Dangereux"
-    validations:
-      required: true
+        const place = data[0];
 
-  - type: dropdown
-    id: forme
-    attributes:
-      label: Forme du poteau
-      options:
-        - "Rond"
-        - "Carré"
-        - "Autre / je ne sais pas"
+        const lat = parseFloat(place.lat);
+        const lon = parseFloat(place.lon);
 
-  - type: dropdown
-    id: matiere
-    attributes:
-      label: Matière
-      options:
-        - "Métal"
-        - "Béton"
-        - "Autre / je ne sais pas"
+        map.setView([lat, lon], 16);
 
-  - type: textarea
-    id: commentaire
-    attributes:
-      label: Commentaire
-      placeholder: "Proximité de la zone de jeu, poteau très exposé, état général…"
+        showAddButton(place.display_name, lat, lon);
 
-  - type: input
-    id: date
-    attributes:
-      label: Date du relevé
-      placeholder: "Ex: 2026-02-24"
-  );
-
-    // --- MAP INIT ---
-    const map = L.map("map", { worldCopyJump: true }).setView([46.6, 2.4], 5); // France par défaut
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap"
-    }).addTo(map);
-
-    const layer = L.layerGroup().addTo(map);
-    let all = [];
-    let markers = [];
-
-    function badge(danger){
-      if(danger === "green") return `<span class="badge green">🟢 Safe</span>`;
-      if(danger === "orange") return `<span class="badge orange">🟠 Moyen</span>`;
-      return `<span class="badge red">🔴 Dangereux</span>`;
-    }
-
-    function popupHTML(p){
-      const foamTxt = p.foam ? "✅ Oui" : "❌ Non";
-      const foamDetails = p.foam
-        ? (p.foam_thickness_mm ? `— ${p.foam_thickness_mm} mm` : "")
-        : (p.reason_no_foam ? `— ${p.reason_no_foam}` : "");
-
-      const when = p.last_checked ? `• relevé: ${p.last_checked}` : "";
-      const by = p.reported_by ? `• par: ${p.reported_by}` : "";
-
-      const img = p.photo_url ? `<img class="popup-img" src="${p.photo_url}" alt="Photo poteau">` : "";
-
-      const gmaps = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(p.lat + "," + p.lng)}`;
-
-      const clubLine = p.club_url
-        ? `<a class="a" href="${p.club_url}" target="_blank" rel="noreferrer">Site du club</a>`
-        : "";
-
-      return `
-        <div>
-          <div class="popup-title">${p.club_name}${p.court_name ? " — " + p.court_name : ""}</div>
-          <div class="popup-meta">${p.city || ""}${p.country ? " • " + p.country : ""} ${when} ${by}</div>
-
-          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-            ${badge(p.danger)}
-            <span class="badge">${p.foam ? "🧽 Mousse" : "🧱 Sans mousse"} — ${foamTxt} ${foamDetails}</span>
-          </div>
-
-          <div style="margin-top:10px; font-size:13px; color: rgba(238,242,255,.92);">
-            <b>Poteau :</b> ${p.pole_shape || "?"}${p.pole_material ? " • " + p.pole_material : ""}${p.pole_notes ? " • " + p.pole_notes : ""}
-          </div>
-
-          ${p.comment ? `<div style="margin-top:8px; font-size:13px; color: rgba(238,242,255,.88);"><b>Commentaire :</b> ${p.comment}</div>` : ""}
-
-          ${img}
-
-          <div class="popup-actions">
-            <a class="a" href="${gmaps}" target="_blank" rel="noreferrer">Ouvrir dans Maps</a>
-            ${clubLine}
-          </div>
-        </div>
-      `;
-    }
-
-    function markerIcon(danger){
-      // Simple: couleur via circleMarker
-      // (on garde ça léger)
-      return danger;
-    }
-
-    function addMarkers(list){
-      layer.clearLayers();
-      markers = [];
-
-      for(const p of list){
-        const m = L.circleMarker([p.lat, p.lng], {
-          radius: 8,
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.65,
-          color: p.danger === "green" ? "#7cdb7b" : (p.danger === "orange" ? "#ffcc66" : "#ff6b6b"),
-          fillColor: p.danger === "green" ? "#7cdb7b" : (p.danger === "orange" ? "#ffcc66" : "#ff6b6b"),
-        }).addTo(layer);
-
-        m.bindPopup(popupHTML(p), { maxWidth: 320 });
-        markers.push({ marker: m, data: p });
-      }
-    }
-
-    function applyFilters(){
-      const q = document.getElementById("search").value.trim().toLowerCase();
-      const onlyNoFoam = document.getElementById("onlyNoFoam").checked;
-      const onlyDanger = document.getElementById("onlyDanger").checked;
-
-      const filtered = all.filter(p => {
-        if(onlyNoFoam && p.foam) return false;
-        if(onlyDanger && p.danger !== "red") return false;
-
-        if(!q) return true;
-        const hay = [
-          p.club_name, p.court_name, p.city, p.country, p.comment, p.pole_shape, p.pole_material
-        ].filter(Boolean).join(" ").toLowerCase();
-
-        return hay.includes(q);
       });
 
-      addMarkers(filtered);
-      updateKPIs(filtered);
-    }
+  }, 500);
+});
 
-    function updateKPIs(current){
-      const total = all.length;
-      const noFoam = all.filter(p => !p.foam).length;
-      const danger = all.filter(p => p.danger === "red").length;
-      const countries = new Set(all.map(p => p.country).filter(Boolean)).size;
 
-      document.getElementById("kpiTotal").textContent = total;
-      document.getElementById("kpiNoFoam").textContent = noFoam;
-      document.getElementById("kpiDanger").textContent = danger;
-      document.getElementById("kpiCountries").textContent = countries;
-    }
+// ================= BOUTON AJOUT =================
 
-    async function load(){
-      const res = await fetch(DATA_URL, { cache: "no-store" });
-      if(!res.ok) throw new Error("Impossible de charger les données.");
-      const json = await res.json();
-      all = json.items || [];
+function showAddButton(address, lat, lon) {
 
-      addMarkers(all);
-      updateKPIs(all);
+  const existing = document.getElementById("addPoleBox");
+  if (existing) existing.remove();
 
-      // Zoom auto si on a déjà des points
-      if(all.length){
-        const bounds = L.latLngBounds(all.map(p => [p.lat, p.lng]));
-        map.fitBounds(bounds.pad(0.2));
-      }
-    }
+  const box = document.createElement("div");
+  box.id = "addPoleBox";
+  box.style.position = "absolute";
+  box.style.bottom = "20px";
+  box.style.left = "50%";
+  box.style.transform = "translateX(-50%)";
+  box.style.background = "#111a2e";
+  box.style.padding = "20px";
+  box.style.borderRadius = "14px";
+  box.style.boxShadow = "0 15px 40px rgba(0,0,0,.5)";
+  box.style.zIndex = "1000";
+  box.style.color = "white";
 
-    // UI events
-    document.getElementById("search").addEventListener("input", applyFilters);
-    document.getElementById("onlyNoFoam").addEventListener("change", applyFilters);
-    document.getElementById("onlyDanger").addEventListener("change", applyFilters);
+  box.innerHTML = `
+    <div style="margin-bottom:10px;font-weight:600;">📍 ${address}</div>
+    <button id="confirmAddPole" style="
+      padding:12px 18px;
+      border:none;
+      border-radius:10px;
+      background:#ff6b6b;
+      color:white;
+      font-weight:bold;
+      font-size:14px;
+      cursor:pointer;
+    ">➕ Ajouter un poteau ici</button>
+  `;
 
-    document.getElementById("btnLocate").addEventListener("click", () => {
-      map.locate({ setView: true, maxZoom: 14 });
-    });
+  document.body.appendChild(box);
 
-    document.getElementById("btnAdd").addEventListener("click", () => {
-      if(GOOGLE_FORM_URL){
-        window.open(GOOGLE_FORM_URL, "_blank", "noreferrer");
-      } else {
-        window.open(GITHUB_ISSUE_TEMPLATE_URL, "_blank", "noreferrer");
-      }
-    });
+  document.getElementById("confirmAddPole").onclick = function () {
 
-    load().catch(err => {
-      console.error(err);
-      alert("Erreur au chargement des données. Vérifie data/poles.json");
-    });
-  </script>
+    const baseFormURL = "https://docs.google.com/forms/d/e/1FAIpQLScvtTYbWyZKuAvAhX1Xhl2eM-WEaRci7QqB7MvXIN-BdwYciQ/viewform?usp=pp_url";
+
+    const clubName = address.split(",")[0];
+
+    const formURL =
+      `${baseFormURL}` +
+      `&entry.1761113382=${encodeURIComponent(clubName)}` +
+      `&entry.1236097005=${encodeURIComponent(address)}` +
+      `&entry.2100892865=${encodeURIComponent(lat)}` +
+      `&entry.1484112050=${encodeURIComponent(lon)}`;
+
+    window.open(formURL, "_blank");
+  };
+}
+
+</script>
+
 </body>
 </html>
