@@ -155,20 +155,112 @@
   const GITHUB_ISSUE_TEMPLATE_URL =
   "https://github.com/Kevin78230/padel-pole-watch/issues/new?title=%F0%9F%A7%B1%20Nouveau%20poteau%20%C3%A0%20ajouter&body=" +
   encodeURIComponent(
-`Merci de compléter :
+name: "🧱 Ajouter un poteau"
+description: "Proposer un club/terrain et l’état du poteau (mousse ou pas)."
+title: "🧱 [Ville] Club – poteau à ajouter"
+labels: ["contribution", "poteau"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci ! 🙌  
+        **Astuce photo :** une fois l’issue créée, tu peux **glisser-déposer une photo** dans le commentaire (ou coller l’image). GitHub l’héberge automatiquement.
 
-- Club :
-- Adresse / Ville / Pays :
-- Coordonnées (lat, lng) :
-- Terrain (si plusieurs) :
-- Mousse (oui/non) :
-- Épaisseur / état :
-- Type poteau (rond/carré, métal, etc.) :
-- Danger (🟢/🟠/🔴) :
-- Date :
-- Photos / liens :
-- Commentaire :
-`
+  - type: input
+    id: club
+    attributes:
+      label: Nom du club
+      placeholder: "Ex: Padel Central"
+    validations:
+      required: true
+
+  - type: input
+    id: ville
+    attributes:
+      label: Ville
+      placeholder: "Ex: Lyon"
+    validations:
+      required: true
+
+  - type: input
+    id: pays
+    attributes:
+      label: Pays
+      placeholder: "Ex: France"
+    validations:
+      required: true
+
+  - type: input
+    id: coords
+    attributes:
+      label: Coordonnées (lat, lng)
+      description: "Tu peux les récupérer sur Google Maps (clic droit) ou OpenStreetMap."
+      placeholder: "Ex: 45.7640, 4.8357"
+    validations:
+      required: true
+
+  - type: input
+    id: terrain
+    attributes:
+      label: Terrain (optionnel)
+      placeholder: "Ex: Terrain 2, côté bar"
+
+  - type: dropdown
+    id: mousse
+    attributes:
+      label: Mousse sur le poteau ?
+      options:
+        - "✅ Oui"
+        - "❌ Non"
+    validations:
+      required: true
+
+  - type: input
+    id: details_mousse
+    attributes:
+      label: Détails mousse (épaisseur / état)
+      placeholder: "Ex: 25 mm, bien fixée / Ex: mousse fine, abîmée"
+
+  - type: dropdown
+    id: danger
+    attributes:
+      label: Niveau de danger
+      options:
+        - "🟢 Safe"
+        - "🟠 Moyen"
+        - "🔴 Dangereux"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: forme
+    attributes:
+      label: Forme du poteau
+      options:
+        - "Rond"
+        - "Carré"
+        - "Autre / je ne sais pas"
+
+  - type: dropdown
+    id: matiere
+    attributes:
+      label: Matière
+      options:
+        - "Métal"
+        - "Béton"
+        - "Autre / je ne sais pas"
+
+  - type: textarea
+    id: commentaire
+    attributes:
+      label: Commentaire
+      placeholder: "Proximité de la zone de jeu, poteau très exposé, état général…"
+
+  - type: input
+    id: date
+    attributes:
+      label: Date du relevé
+      placeholder: "Ex: 2026-02-24"
   );
 
     // --- MAP INIT ---
