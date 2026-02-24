@@ -1,45 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8"/>
 <title>Padel Pole Watch</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
+:root {
+  --bg:#0f172a;
+  --panel:#111827;
+  --accent:#ef4444;
+  --green:#22c55e;
+  --orange:#f59e0b;
+  --red:#ef4444;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+}
+
 body {
   margin:0;
-  font-family: Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background:var(--bg);
+  color:var(--text);
   display:flex;
   height:100vh;
 }
 
 #sidebar {
-  width:280px;
-  background:#111a2e;
-  color:white;
-  padding:20px;
+  width:320px;
+  background:var(--panel);
+  padding:30px 25px;
   box-sizing:border-box;
+  display:flex;
+  flex-direction:column;
+  gap:25px;
+  box-shadow:4px 0 20px rgba(0,0,0,0.3);
 }
 
-#sidebar h2 {
-  margin-top:0;
+.logo {
+  font-size:20px;
+  font-weight:600;
+  letter-spacing:0.5px;
+}
+
+.stats {
+  display:flex;
+  flex-direction:column;
+  gap:12px;
 }
 
 .stat {
-  margin:6px 0;
+  display:flex;
+  justify-content:space-between;
+  padding:10px 12px;
+  border-radius:8px;
+  background:#1f2937;
+  font-size:14px;
 }
 
-.filter {
-  margin-top:15px;
+.badge {
+  font-weight:600;
 }
 
-.filter label {
-  display:block;
-  margin:5px 0;
+.filters label {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
   cursor:pointer;
+  font-size:14px;
+}
+
+input[type="checkbox"] {
+  accent-color:var(--accent);
 }
 
 #map {
@@ -48,21 +84,30 @@ body {
 
 #searchBox {
   position:absolute;
-  top:15px;
+  top:25px;
   left:50%;
   transform:translateX(-50%);
   z-index:1000;
-  background:white;
-  padding:10px;
-  border-radius:10px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.2);
 }
 
 #searchInput {
-  width:280px;
-  padding:8px;
-  border-radius:6px;
-  border:1px solid #ccc;
+  width:340px;
+  padding:12px 15px;
+  border-radius:12px;
+  border:none;
+  outline:none;
+  font-size:14px;
+  background:#1f2937;
+  color:white;
+  box-shadow:0 10px 25px rgba(0,0,0,0.4);
+}
+
+#searchInput::placeholder {
+  color:var(--muted);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius:12px;
 }
 </style>
 </head>
@@ -70,14 +115,17 @@ body {
 <body>
 
 <div id="sidebar">
-  <h2>📊 Statistiques</h2>
-  <div class="stat">Total : <span id="totalCount">0</span></div>
-  <div class="stat">🟢 Safe : <span id="greenCount">0</span></div>
-  <div class="stat">🟠 Moyen : <span id="orangeCount">0</span></div>
-  <div class="stat">🔴 Dangereux : <span id="redCount">0</span></div>
+  <div class="logo">🏓 Padel Pole Watch</div>
 
-  <div class="filter">
-    <h3>🎛️ Filtres</h3>
+  <div class="stats">
+    <div class="stat">Total <span id="totalCount" class="badge">0</span></div>
+    <div class="stat">🟢 Safe <span id="greenCount" class="badge">0</span></div>
+    <div class="stat">🟠 Moyen <span id="orangeCount" class="badge">0</span></div>
+    <div class="stat">🔴 Dangereux <span id="redCount" class="badge">0</span></div>
+  </div>
+
+  <div class="filters">
+    <strong>Filtres</strong>
     <label><input type="checkbox" id="filterGreen" checked> 🟢 Safe</label>
     <label><input type="checkbox" id="filterOrange" checked> 🟠 Moyen</label>
     <label><input type="checkbox" id="filterRed" checked> 🔴 Dangereux</label>
@@ -87,20 +135,17 @@ body {
 <div id="map"></div>
 
 <div id="searchBox">
-  <input type="text" id="searchInput" placeholder="Rechercher un club...">
+  <input type="text" id="searchInput" placeholder="Rechercher un club ou une adresse...">
 </div>
 
 <script>
-
 var map = L.map('map').setView([46.6, 2.4], 6);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19
+  maxZoom:19
 }).addTo(map);
 
 let markers = [];
-
-// ================= CHARGEMENT GOOGLE SHEETS TSV =================
 
 function loadMarkers() {
 
@@ -114,7 +159,7 @@ function loadMarkers() {
       const rows = text.trim().split("\n");
       rows.shift();
 
-      let total = 0, green = 0, orange = 0, red = 0;
+      let total=0, green=0, orange=0, red=0;
 
       rows.forEach(row => {
 
@@ -130,72 +175,62 @@ function loadMarkers() {
 
         total++;
 
-        let color = "red";
+        let color="red";
         red++;
 
-        if (danger.includes("🟢")) {
-          color = "green";
-          green++; red--;
-        }
-        if (danger.includes("🟠")) {
-          color = "orange";
-          orange++; red--;
-        }
+        if (danger.includes("🟢")) { color="green"; green++; red--; }
+        if (danger.includes("🟠")) { color="orange"; orange++; red--; }
 
         if (
-          (color === "green" && !filterGreen.checked) ||
-          (color === "orange" && !filterOrange.checked) ||
-          (color === "red" && !filterRed.checked)
+          (color==="green" && !filterGreen.checked) ||
+          (color==="orange" && !filterOrange.checked) ||
+          (color==="red" && !filterRed.checked)
         ) return;
 
-        const marker = L.circleMarker([lat, lon], {
-          radius: 8,
-          color: color,
-          fillColor: color,
-          fillOpacity: 0.7
+        const marker = L.circleMarker([lat,lon],{
+          radius:9,
+          color:color,
+          fillColor:color,
+          fillOpacity:0.85
         })
         .addTo(map)
-        .bindPopup(`<strong>${club}</strong><br>${address}<br>${danger}`);
+        .bindPopup(`
+          <strong>${club}</strong><br>
+          <small>${address}</small><br><br>
+          <b>${danger}</b>
+        `);
 
         markers.push(marker);
 
       });
 
-      totalCount.textContent = total;
-      greenCount.textContent = green;
-      orangeCount.textContent = orange;
-      redCount.textContent = red;
+      totalCount.textContent=total;
+      greenCount.textContent=green;
+      orangeCount.textContent=orange;
+      redCount.textContent=red;
 
     });
 }
 
 loadMarkers();
 
-filterGreen.onchange = loadMarkers;
-filterOrange.onchange = loadMarkers;
-filterRed.onchange = loadMarkers;
+filterGreen.onchange=loadMarkers;
+filterOrange.onchange=loadMarkers;
+filterRed.onchange=loadMarkers;
 
-// ================= RECHERCHE =================
+searchInput.addEventListener("input", function(){
 
-searchInput.addEventListener("input", function () {
-
-  const query = this.value.trim();
-  if (query.length < 3) return;
+  const query=this.value.trim();
+  if(query.length<3) return;
 
   fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
-    .then(res => res.json())
-    .then(data => {
-
-      if (!data.length) return;
-
-      const lat = parseFloat(data[0].lat);
-      const lon = parseFloat(data[0].lon);
-
-      map.setView([lat, lon], 16);
+    .then(res=>res.json())
+    .then(data=>{
+      if(!data.length) return;
+      map.setView([data[0].lat,data[0].lon],16);
     });
 
 });
-
 </script>
 
 </body>
