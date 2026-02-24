@@ -77,25 +77,6 @@
     .searchInput::placeholder{ color:rgba(168,179,207,.85); }
     .hint{ font-size:12px; color:var(--muted); line-height:1.35; }
 
-    .seg{
-      display:flex; gap:8px; align-items:center; flex-wrap:wrap;
-      margin-top:6px;
-    }
-    .pillBtn{
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(0,0,0,.18);
-      color: var(--txt);
-      padding:8px 10px;
-      border-radius: 999px;
-      font-size:12px;
-      cursor:pointer;
-      user-select:none;
-    }
-    .pillBtn.active{
-      border-color: rgba(239,68,68,.55);
-      background: rgba(239,68,68,.18);
-    }
-
     .results{
       display:none;
       overflow:hidden;
@@ -167,7 +148,7 @@
       <div class="brand">
         <div>
           <h1>🏓 Padel Pole Watch</h1>
-          <div class="tag">Trouve un club ➜ ajoute un poteau ➜ ça apparaît tout seul</div>
+          <div class="tag">Recherche fiable (comme la “version parfaite”)</div>
         </div>
         <button class="btn secondary" id="btnRefresh" title="Recharger les données">↻</button>
       </div>
@@ -197,17 +178,10 @@
       </div>
 
       <div class="card searchWrap">
-        <div style="font-weight:900;">🔎 Recherche</div>
-        <input class="searchInput" id="searchInput" type="search" placeholder="Nom du club + ville (ex: tennis bailly noisy)" />
-
-        <div class="seg">
-          <button class="pillBtn active" id="modeClub" type="button">🎾 Mode Club</button>
-          <button class="pillBtn" id="modeAdresse" type="button">📍 Mode Adresse</button>
-          <button class="pillBtn" id="modeLarge" type="button" title="Moins précis mais plus large">🌍 Large</button>
-        </div>
-
-        <div class="hint" id="searchHint">
-          Mode Club = résultats “sport/leisure/club” + boost “padel”.
+        <div style="font-weight:900;">🔎 Trouver un club</div>
+        <input class="searchInput" id="searchInput" type="search" placeholder="Nom du club + ville (ex: tennis club le pecq)" />
+        <div class="hint">
+          Astuce : zoome d’abord sur la ville ➜ la recherche est “biasée” dans la zone affichée (résultats bien plus justes).
         </div>
 
         <div class="results" id="resultsBox"></div>
@@ -216,12 +190,6 @@
           <div class="addHereTitle">📍 Adresse sélectionnée</div>
           <div class="addHereAddr" id="addHereAddr">—</div>
           <button class="btn" id="btnAddHere">➕ Ajouter un poteau ici</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="hint">
-          💡 Si la recherche sort un tennis au lieu d’un padel : passe en “Mode Adresse” ou “Large”.
         </div>
       </div>
     </aside>
@@ -244,13 +212,7 @@
     const FORM_LAT = "entry.2100892865";
     const FORM_LON = "entry.1484112050";
 
-    // Search modes
-    const MODE = { CLUB:"club", ADRESSE:"adresse", LARGE:"large" };
-    let searchMode = MODE.CLUB;
-
-    // Nominatim endpoints
-    // 1) "search" endpoint
-    const NOMINATIM_SEARCH = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=8&q=";
+    const NOMINATIM_BASE = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=8&q=";
 
     // Dedup settings
     const DEDUP_DECIMALS = 4;
@@ -287,11 +249,6 @@
     const addHereAddr = document.getElementById("addHereAddr");
     const btnAddHere = document.getElementById("btnAddHere");
 
-    const modeClub = document.getElementById("modeClub");
-    const modeAdresse = document.getElementById("modeAdresse");
-    const modeLarge = document.getElementById("modeLarge");
-    const searchHint = document.getElementById("searchHint");
-
     let selectedPlace = null;
 
     // =========================
@@ -320,7 +277,11 @@
       return 1;
     }
     function normalizeName(s){
-      return (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim();
+      return (s || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g," ")
+        .trim();
     }
     function roundCoord(n){
       const f = Math.pow(10, DEDUP_DECIMALS);
@@ -342,6 +303,24 @@
       map.fitBounds(bounds.pad(0.25));
     }
 
+    async function copyText(text){
+      try{ await navigator.clipboard.writeText(text); return true; }
+      catch(e){
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try{ document.execCommand("copy"); }catch(_){}
+        document.body.removeChild(ta);
+        return true;
+      }
+    }
+    function buildShareUrl(lat, lon, zoom){
+      const base = window.location.origin + window.location.pathname;
+      const z = Math.max(3, Math.min(19, zoom || 16));
+      return `${base}#z=${z}&lat=${lat.toFixed(6)}&lon=${lon.toFixed(6)}`;
+    }
+
     function popupHTML(p){
       const pill =
         p.color === "green" ? `<span class="pill">🟢 Safe</span>` :
@@ -361,24 +340,6 @@
           <button class="popBtn" data-action="zoom">🎯 Zoom</button>
         </div>
       `;
-    }
-
-    async function copyText(text){
-      try{ await navigator.clipboard.writeText(text); return true; }
-      catch(e){
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        try{ document.execCommand("copy"); }catch(_){}
-        document.body.removeChild(ta);
-        return true;
-      }
-    }
-    function buildShareUrl(lat, lon, zoom){
-      const base = window.location.origin + window.location.pathname;
-      const z = Math.max(3, Math.min(19, zoom || 16));
-      return `${base}#z=${z}&lat=${lat.toFixed(6)}&lon=${lon.toFixed(6)}`;
     }
 
     function updateKPIs(){
@@ -425,7 +386,6 @@
       }
 
       updateKPIs();
-
       if (autoZoomOnHall && onlyHallOfShame.checked) zoomToVisibleMarkers();
     }
 
@@ -458,8 +418,7 @@
 
         if (!buckets.has(key)){
           buckets.set(key, {
-            club, address, lat, lon,
-            danger, color,
+            club, address, lat, lon, danger, color,
             reportsCount: 1,
             maxSeverity: severityRank(color)
           });
@@ -482,57 +441,74 @@
     }
 
     // =========================
-    // Search - more robust modes
+    // SEARCH (like the "perfect" version)
+    // Key points:
+    // - query is EXACTLY what user typed (no padel boost)
+    // - bias search to current map bounds when zoomed enough
+    // - show multiple results for user to pick the right one
     // =========================
-    function setMode(m){
-      searchMode = m;
-      [modeClub, modeAdresse, modeLarge].forEach(b => b.classList.remove("active"));
-      if (m === MODE.CLUB) modeClub.classList.add("active");
-      if (m === MODE.ADRESSE) modeAdresse.classList.add("active");
-      if (m === MODE.LARGE) modeLarge.classList.add("active");
-
-      if (m === MODE.CLUB) searchHint.textContent = "Mode Club = boost “padel” + résultats sport/leisure/club.";
-      if (m === MODE.ADRESSE) searchHint.textContent = "Mode Adresse = cherche une adresse précise (moins padel, plus géocodage).";
-      if (m === MODE.LARGE) searchHint.textContent = "Large = plus permissif (utile si OSM est incomplet).";
-    }
-
-    modeClub.addEventListener("click", ()=> setMode(MODE.CLUB));
-    modeAdresse.addEventListener("click", ()=> setMode(MODE.ADRESSE));
-    modeLarge.addEventListener("click", ()=> setMode(MODE.LARGE));
-
     function hideResults(){
       resultsBox.style.display = "none";
       resultsBox.innerHTML = "";
     }
 
-    function showResults(items){
+    function buildNominatimUrl(q){
+      let url = NOMINATIM_BASE + encodeURIComponent(q);
+
+      // Bias by map bounds when zoomed in (makes results MUCH more relevant)
+      const z = map.getZoom();
+      if (z >= 10){
+        const b = map.getBounds();
+        // Nominatim expects: viewbox=left,top,right,bottom
+        const left = b.getWest();
+        const right = b.getEast();
+        const top = b.getNorth();
+        const bottom = b.getSouth();
+        url += `&viewbox=${left},${top},${right},${bottom}&bounded=1`;
+      }
+      return url;
+    }
+
+    function showResults(items, q){
       resultsBox.innerHTML = "";
       resultsBox.style.display = "block";
 
       if (!items.length){
-        resultsBox.innerHTML = `<div style="padding:10px 10px; font-size:13px; color:var(--muted);">Aucun résultat. Essaie “Mode Adresse” ou “Large”.</div>`;
+        resultsBox.innerHTML = `<div style="padding:10px 10px; font-size:13px; color:var(--muted);">Aucun résultat. Astuce : zoome sur la ville puis relance la recherche.</div>`;
         return;
       }
 
-      for (const it of items){
-        const name = it.display_name || "";
-        const type = [it.type, it.class].filter(Boolean).join(" • ");
+      // Light ranking: prefer results whose display_name contains the query tokens
+      const tokens = (q || "").toLowerCase().split(/\s+/).filter(Boolean);
+      const scored = items.map(it => {
+        const name = (it.display_name || "").toLowerCase();
+        let score = 0;
+        for (const t of tokens) if (name.includes(t)) score += 2;
+        // prefer "amenity/leisure" for clubs but without filtering out others
+        const cls = (it.class || "").toLowerCase();
+        if (cls.includes("amenity") || cls.includes("leisure")) score += 1;
+        return { it, score };
+      }).sort((a,b)=> b.score - a.score);
+
+      for (const {it} of scored){
+        const label = it.display_name || "";
+        const type = [it.class, it.type].filter(Boolean).join(" • ");
         const btn = document.createElement("button");
         btn.className = "resultBtn";
         btn.type = "button";
-        btn.innerHTML = `${name}<span class="subline">${type}</span>`;
+        btn.innerHTML = `${label}<span class="subline">${type}</span>`;
 
         btn.addEventListener("click", () => {
           const lat = Number(it.lat);
           const lon = Number(it.lon);
-          const label = it.display_name || "";
 
-          if (Number.isFinite(lat) && Number.isFinite(lon)) map.setView([lat, lon], 16);
+          if (Number.isFinite(lat) && Number.isFinite(lon)){
+            map.setView([lat, lon], 16);
+          }
 
           selectedPlace = { label, lat, lon };
           addHereAddr.textContent = label;
           addHereBox.style.display = "block";
-
           hideResults();
         });
 
@@ -541,7 +517,7 @@
     }
 
     async function runSearch(q){
-      if (q.length < 3){
+      if (!q || q.trim().length < 3){
         hideResults();
         return;
       }
@@ -549,47 +525,10 @@
       resultsBox.style.display = "block";
       resultsBox.innerHTML = `<div style="padding:10px 10px; font-size:13px; color:var(--muted);">Recherche…</div>`;
 
-      // Improve query depending on mode
-      let query = q.trim();
-
-      if (searchMode === MODE.CLUB){
-        // boost "padel" if not present
-        if (!/padel/i.test(query)) query = `padel ${query}`;
-      }
-
-      // Nominatim supports some params. We'll use "q" but also filter by "featuretype"
-      // featuretype=poi helps for clubs (when possible)
-      let url = NOMINATIM_SEARCH + encodeURIComponent(query);
-
-      if (searchMode === MODE.CLUB){
-        url += "&featuretype=poi";
-      }
-
       try{
-        const res = await fetch(url, { cache:"no-store" });
+        const res = await fetch(buildNominatimUrl(q.trim()), { cache:"no-store" });
         const data = await res.json();
-        let items = Array.isArray(data) ? data : [];
-
-        // Additional filtering for club mode
-        if (searchMode === MODE.CLUB){
-          items = items.filter(it => {
-            const cls = (it.class || "").toLowerCase();
-            const typ = (it.type || "").toLowerCase();
-            const name = (it.display_name || "").toLowerCase();
-            // keep things likely related to sport/leisure/club
-            const ok =
-              cls.includes("leisure") || cls.includes("sport") || cls.includes("amenity") ||
-              typ.includes("sports_centre") || typ.includes("sports") || typ.includes("pitch") ||
-              name.includes("padel") || name.includes("tennis") || name.includes("club");
-            return ok;
-          });
-        }
-
-        // Large mode: keep first 8 (no filter)
-        items = items.slice(0, 8);
-
-        showResults(items);
-
+        showResults(Array.isArray(data) ? data : [], q.trim());
       }catch(e){
         resultsBox.style.display = "block";
         resultsBox.innerHTML = `<div style="padding:10px 10px; font-size:13px; color:var(--muted);">Erreur de recherche. Réessaie.</div>`;
@@ -600,13 +539,14 @@
     let searchTimer = null;
     searchInput.addEventListener("input", () => {
       clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => runSearch(searchInput.value.trim()), 350);
+      searchTimer = setTimeout(() => runSearch(searchInput.value), 300);
     });
+
     searchInput.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         e.preventDefault();
         clearTimeout(searchTimer);
-        runSearch(searchInput.value.trim());
+        runSearch(searchInput.value);
       }
     });
 
@@ -620,10 +560,10 @@
 
       const url =
         `${GOOGLE_FORM_BASE}` +
-        `&${FORM_CLUB}=${encodeURIComponent(clubName)}` +
-        `&${FORM_ADDRESS}=${encodeURIComponent(selectedPlace.label)}` +
-        `&${FORM_LAT}=${encodeURIComponent(lat.toFixed(7))}` +
-        `&${FORM_LON}=${encodeURIComponent(lon.toFixed(7))}`;
+        `&entry.1761113382=${encodeURIComponent(clubName)}` +
+        `&entry.1236097005=${encodeURIComponent(selectedPlace.label)}` +
+        `&entry.2100892865=${encodeURIComponent(lat.toFixed(7))}` +
+        `&entry.1484112050=${encodeURIComponent(lon.toFixed(7))}`;
 
       window.open(url, "_blank");
     });
@@ -632,7 +572,6 @@
     filterGreen.addEventListener("change", () => renderMarkers());
     filterOrange.addEventListener("change", () => renderMarkers());
     filterRed.addEventListener("change", () => renderMarkers());
-
     onlyHallOfShame.addEventListener("change", () => renderMarkers({autoZoomOnHall:true}));
 
     // Refresh
@@ -653,7 +592,6 @@
     window.addEventListener("hashchange", applyHash);
 
     // Init
-    setMode(MODE.CLUB);
     applyHash();
     loadSheet().catch(console.error);
     setInterval(() => loadSheet().catch(()=>{}), 120000);
