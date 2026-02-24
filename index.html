@@ -12,6 +12,21 @@
     body { margin:0; font-family: Arial, sans-serif; }
     #map { height:100vh; width:100%; }
 
+    #statsPanel {
+  position:absolute;
+  top:100px;
+  left:20px;
+  z-index:1000;
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  font-size:14px;
+  line-height:1.6;
+}
+  
+    
+    
     #searchBox {
       position:absolute;
       top:15px;
@@ -72,6 +87,11 @@ fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFC
     const rows = text.trim().split("\n");
     rows.shift(); // remove header
 
+    let total = 0;
+    let green = 0;
+    let orange = 0;
+    let red = 0;
+
     rows.forEach(row => {
 
       const cols = row.split("\t");
@@ -84,9 +104,22 @@ fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFC
 
       if (!lat || !lon) return;
 
+      total++;
+
       let color = "red";
-      if (danger && danger.includes("🟢")) color = "green";
-      if (danger && danger.includes("🟠")) color = "orange";
+      red++;
+
+      if (danger && danger.includes("🟢")) {
+        color = "green";
+        green++;
+        red--;
+      }
+
+      if (danger && danger.includes("🟠")) {
+        color = "orange";
+        orange++;
+        red--;
+      }
 
       L.circleMarker([lat, lon], {
         radius: 8,
@@ -102,6 +135,12 @@ fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFC
       `);
 
     });
+
+    // Update stats display
+    document.getElementById("totalCount").textContent = total;
+    document.getElementById("greenCount").textContent = green;
+    document.getElementById("orangeCount").textContent = orange;
+    document.getElementById("redCount").textContent = red;
 
   })
   .catch(err => console.error("Erreur chargement TSV:", err));
