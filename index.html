@@ -55,6 +55,36 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap'
 }).addTo(map);
 
+// ================= CHARGEMENT DES POTEAUX EXISTANTS =================
+
+fetch("data/poles.json")
+  .then(response => response.json())
+  .then(data => {
+
+    data.items.forEach(p => {
+
+      let color = "red";
+
+      if (p.danger === "green") color = "green";
+      if (p.danger === "orange") color = "orange";
+
+      L.circleMarker([p.lat, p.lng], {
+        radius: 8,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.7
+      })
+      .addTo(map)
+      .bindPopup(`
+        <strong>${p.club_name}</strong><br>
+        ${p.city || ""}<br>
+        Danger : ${p.danger}
+      `);
+
+    });
+
+  })
+  .catch(error => console.log("Erreur chargement poteaux:", error));
 
 // ================= RECHERCHE NOMINATIM =================
 
