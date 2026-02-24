@@ -55,30 +55,30 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap'
 }).addTo(map);
 
-// ================= CHARGEMENT DES POTEAUX EXISTANTS (GOOGLE SHEETS CSV) =================
+// ================= CHARGEMENT DES POTEAUX EXISTANTS (GOOGLE SHEETS TSV) =================
 
-fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFChkNLfpGAACMs5Jlj-ljpPakGQrlQW3Jd-zvq8mCJ3vEqz6Cva4oLQ5/pub?gid=53515521&single=true&output=csv")
+fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFChkNLfpGAACMs5Jlj-ljpPakGQrlQW3Jd-zvq8mCJ3vEqz6Cva4oLQ5/pub?output=tsv")
   .then(res => res.text())
-  .then(csvText => {
+  .then(text => {
 
-    const rows = csvText.split("\n").slice(1); // ignore header
+    const rows = text.trim().split("\n");
+    rows.shift(); // remove header
 
     rows.forEach(row => {
 
-      const cols = row.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-      if (!cols || cols.length < 7) return;
+      const cols = row.split("\t");
 
-      const club = cols[1]?.replace(/"/g, "");
-      const address = cols[2]?.replace(/"/g, "");
+      const club = cols[1];
+      const address = cols[2];
       const lat = parseFloat(cols[3]);
       const lon = parseFloat(cols[4]);
-      const danger = cols[6]?.replace(/"/g, "");
+      const danger = cols[6];
 
       if (!lat || !lon) return;
 
       let color = "red";
-      if (danger?.includes("🟢")) color = "green";
-      if (danger?.includes("🟠")) color = "orange";
+      if (danger && danger.includes("🟢")) color = "green";
+      if (danger && danger.includes("🟠")) color = "orange";
 
       L.circleMarker([lat, lon], {
         radius: 8,
@@ -96,7 +96,7 @@ fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFC
     });
 
   })
-  .catch(err => console.error("Erreur CSV poteaux:", err));
+  .catch(err => console.error("Erreur chargement TSV:", err));
 
 // ================= RECHERCHE NOMINATIM =================
 
