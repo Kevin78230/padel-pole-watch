@@ -1,237 +1,1001 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8"/>
-<title>Padel Pole Watch</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="utf-8" />
+  <title>Padel Pole Watch</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-<style>
-:root {
-  --bg:#0f172a;
-  --panel:#111827;
-  --accent:#ef4444;
-  --green:#22c55e;
-  --orange:#f59e0b;
-  --red:#ef4444;
-  --text:#f3f4f6;
-  --muted:#9ca3af;
-}
+  <style>
+    :root{
+      --bg:#0b1220;
+      --panel:#0f1730;
+      --panel2:#111a2e;
+      --stroke:rgba(255,255,255,.10);
+      --txt:#eef2ff;
+      --muted:#a8b3cf;
 
-body {
-  margin:0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  display:flex;
-  height:100vh;
-}
+      --green:#22c55e;
+      --orange:#f59e0b;
+      --red:#ef4444;
 
-#sidebar {
-  width:320px;
-  background:var(--panel);
-  padding:30px 25px;
-  box-sizing:border-box;
-  display:flex;
-  flex-direction:column;
-  gap:25px;
-  box-shadow:4px 0 20px rgba(0,0,0,0.3);
-}
+      --shadow: 0 18px 55px rgba(0,0,0,.55);
+      --shadow2: 0 10px 30px rgba(0,0,0,.35);
+      --r12:12px;
+      --r16:16px;
+      --r20:20px;
+    }
 
-.logo {
-  font-size:20px;
-  font-weight:600;
-  letter-spacing:0.5px;
-}
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:var(--bg);
+      color:var(--txt);
+      overflow:hidden;
+    }
 
-.stats {
-  display:flex;
-  flex-direction:column;
-  gap:12px;
-}
+    .app{
+      height:100vh;
+      display:grid;
+      grid-template-columns: 380px 1fr;
+    }
 
-.stat {
-  display:flex;
-  justify-content:space-between;
-  padding:10px 12px;
-  border-radius:8px;
-  background:#1f2937;
-  font-size:14px;
-}
+    /* Sidebar */
+    .sidebar{
+      background:linear-gradient(180deg, var(--panel), rgba(15,23,48,.92));
+      border-right:1px solid var(--stroke);
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      box-shadow: 8px 0 35px rgba(0,0,0,.35);
+      overflow:auto;
+    }
 
-.badge {
-  font-weight:600;
-}
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 12px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.03);
+      border-radius: var(--r16);
+      box-shadow: var(--shadow2);
+    }
+    .brand h1{
+      margin:0;
+      font-size:16px;
+      letter-spacing:.2px;
+    }
+    .brand .tag{
+      font-size:12px;
+      color:var(--muted);
+      opacity:.9;
+      margin-top:2px;
+    }
 
-.filters label {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  margin-bottom:8px;
-  cursor:pointer;
-  font-size:14px;
-}
+    .card{
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.03);
+      border-radius: var(--r16);
+      padding:12px;
+      box-shadow: var(--shadow2);
+    }
 
-input[type="checkbox"] {
-  accent-color:var(--accent);
-}
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
 
-#map {
-  flex:1;
-}
+    .stats{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+    .statBox{
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.18);
+      border-radius: var(--r12);
+      padding:10px 10px;
+    }
+    .statBox .label{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:4px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .statBox .value{
+      font-size:22px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
 
-#searchBox {
-  position:absolute;
-  top:25px;
-  left:50%;
-  transform:translateX(-50%);
-  z-index:1000;
-}
+    .filters{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      margin-top:10px;
+    }
+    .check{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:13px;
+      color:var(--txt);
+      cursor:pointer;
+      user-select:none;
+    }
+    .check input{
+      width:16px;
+      height:16px;
+      accent-color: var(--red);
+      cursor:pointer;
+    }
 
-#searchInput {
-  width:340px;
-  padding:12px 15px;
-  border-radius:12px;
-  border:none;
-  outline:none;
-  font-size:14px;
-  background:#1f2937;
-  color:white;
-  box-shadow:0 10px 25px rgba(0,0,0,0.4);
-}
+    .btn{
+      border:0;
+      cursor:pointer;
+      padding:12px 12px;
+      border-radius: var(--r12);
+      font-weight:800;
+      color:#fff;
+      background: var(--red);
+      box-shadow: 0 12px 28px rgba(239,68,68,.22);
+      transition: transform .05s ease;
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn.secondary{
+      background: rgba(255,255,255,.10);
+      color: var(--txt);
+      box-shadow:none;
+      font-weight:700;
+    }
+    .btn.secondary:hover{ background: rgba(255,255,255,.14); }
 
-#searchInput::placeholder {
-  color:var(--muted);
-}
+    .searchWrap{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
 
-.leaflet-popup-content-wrapper {
-  border-radius:12px;
-}
-</style>
+    .searchInput{
+      width:100%;
+      padding:12px 12px;
+      border-radius: var(--r12);
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.20);
+      color:var(--txt);
+      outline:none;
+      font-size:14px;
+    }
+    .searchInput::placeholder{ color:rgba(168,179,207,.85); }
+
+    .hint{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.35;
+    }
+
+    .results{
+      display:none;
+      overflow:hidden;
+      border-radius: var(--r12);
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.18);
+    }
+
+    .resultBtn{
+      width:100%;
+      text-align:left;
+      border:0;
+      background:transparent;
+      color:var(--txt);
+      padding:10px 10px;
+      cursor:pointer;
+      border-top:1px solid rgba(255,255,255,.06);
+      font-size:13px;
+      line-height:1.25;
+    }
+    .resultBtn:first-child{ border-top:0; }
+    .resultBtn:hover{ background:rgba(255,255,255,.06); }
+
+    .addHereBox{
+      display:none;
+      border-radius: var(--r16);
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.22);
+      padding:12px;
+    }
+    .addHereTitle{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .addHereAddr{
+      font-size:13px;
+      opacity:.92;
+      line-height:1.3;
+      margin-bottom:10px;
+    }
+
+    .inlineControls{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top:10px;
+    }
+    .select{
+      padding:10px 10px;
+      border-radius: var(--r12);
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(0,0,0,.20);
+      color:var(--txt);
+      outline:none;
+      font-size:13px;
+    }
+
+    .rank{
+      margin-top:10px;
+      display:grid;
+      gap:8px;
+    }
+    .rankItem{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 10px;
+      border-radius: var(--r12);
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.18);
+      font-size:13px;
+    }
+    .rankItem .name{
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+      max-width:260px;
+    }
+    .rankItem .count{
+      font-weight:900;
+      color:var(--red);
+    }
+
+    /* Map */
+    #map{ width:100%; height:100vh; }
+
+    /* Leaflet popup on dark */
+    .leaflet-popup-content-wrapper, .leaflet-popup-tip{
+      background:#0f1730;
+      color:var(--txt);
+      border:1px solid rgba(255,255,255,.10);
+    }
+    .leaflet-popup-content{ margin:10px 12px; }
+    .popupTitle{ font-weight:900; margin-bottom:4px; }
+    .popupAddr{ color:rgba(168,179,207,.95); font-size:12px; margin-bottom:10px; }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:5px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      font-size:12px;
+      background:rgba(255,255,255,.04);
+      margin-right:6px;
+      margin-bottom:6px;
+    }
+    .popActions{
+      margin-top:10px;
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+    .popBtn{
+      border:0;
+      cursor:pointer;
+      padding:9px 10px;
+      border-radius: 12px;
+      font-weight:800;
+      background: rgba(255,255,255,.10);
+      color: var(--txt);
+    }
+    .popBtn:hover{ background: rgba(255,255,255,.14); }
+
+    /* Responsive */
+    @media (max-width: 980px){
+      body{ overflow:auto; }
+      .app{ grid-template-columns: 1fr; }
+      #map{ height: 70vh; }
+    }
+  </style>
 </head>
 
 <body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <h1>🏓 Padel Pole Watch</h1>
+          <div class="tag">Carte communautaire des poteaux 🧱</div>
+        </div>
+        <button class="btn secondary" id="btnRefresh" title="Recharger les données">↻</button>
+      </div>
 
-<div id="sidebar">
-  <div class="logo">🏓 Padel Pole Watch</div>
+      <div class="card">
+        <div class="row">
+          <div style="font-weight:900;">📊 Statistiques</div>
+          <div style="font-size:12px;color:var(--muted);" id="lastUpdate">—</div>
+        </div>
 
-  <div class="stats">
-    <div class="stat">Total <span id="totalCount" class="badge">0</span></div>
-    <div class="stat">🟢 Safe <span id="greenCount" class="badge">0</span></div>
-    <div class="stat">🟠 Moyen <span id="orangeCount" class="badge">0</span></div>
-    <div class="stat">🔴 Dangereux <span id="redCount" class="badge">0</span></div>
+        <div class="stats">
+          <div class="statBox">
+            <div class="label">Total (clubs)</div>
+            <div class="value" id="kpiTotal">0</div>
+          </div>
+          <div class="statBox">
+            <div class="label">🟢 Safe</div>
+            <div class="value" id="kpiGreen">0</div>
+          </div>
+          <div class="statBox">
+            <div class="label">🟠 Moyen</div>
+            <div class="value" id="kpiOrange">0</div>
+          </div>
+          <div class="statBox">
+            <div class="label">🔴 Dangereux</div>
+            <div class="value" id="kpiRed">0</div>
+          </div>
+        </div>
+
+        <div class="filters">
+          <label class="check"><input type="checkbox" id="filterGreen" checked> Afficher 🟢 Safe</label>
+          <label class="check"><input type="checkbox" id="filterOrange" checked> Afficher 🟠 Moyen</label>
+          <label class="check"><input type="checkbox" id="filterRed" checked> Afficher 🔴 Dangereux</label>
+
+          <label class="check" style="margin-top:6px;">
+            <input type="checkbox" id="onlyHallOfShame">
+            Mode “Hall of Shame” (🔴 uniquement)
+          </label>
+        </div>
+
+        <div class="inlineControls">
+          <button class="btn secondary" id="btnLocate">📍 Autour de moi</button>
+          <select class="select" id="radiusKm" title="Rayon autour de moi">
+            <option value="5">5 km</option>
+            <option value="10" selected>10 km</option>
+            <option value="25">25 km</option>
+            <option value="50">50 km</option>
+          </select>
+          <button class="btn secondary" id="btnClearNear" title="Désactiver le filtre autour de moi">✕</button>
+        </div>
+
+        <div class="hint" id="nearHint" style="margin-top:10px; display:none;">
+          Filtre “autour de moi” actif.
+        </div>
+      </div>
+
+      <div class="card searchWrap">
+        <div style="font-weight:900;">🔎 Trouver un club</div>
+        <input class="searchInput" id="searchInput" type="search" placeholder="Ex: liberty country club, Paris, padel…" />
+        <div class="hint">
+          Sélectionne le bon résultat, puis clique sur “Ajouter un poteau ici”.<br/>
+          (Les coordonnées + adresse seront préremplies.)
+        </div>
+
+        <div class="results" id="resultsBox"></div>
+
+        <div class="addHereBox" id="addHereBox">
+          <div class="addHereTitle">📍 Adresse sélectionnée</div>
+          <div class="addHereAddr" id="addHereAddr">—</div>
+          <button class="btn" id="btnAddHere">➕ Ajouter un poteau ici</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div style="font-weight:900;">🏆 Top 🔴</div>
+          <div class="hint">clubs / villes</div>
+        </div>
+
+        <div class="hint" style="margin-top:8px;">
+          Classement basé sur les signalements “dangereux”.
+        </div>
+
+        <div class="rank" id="rankClubs"></div>
+        <div style="height:8px;"></div>
+        <div class="rank" id="rankCities"></div>
+      </div>
+    </aside>
+
+    <main>
+      <div id="map"></div>
+    </main>
   </div>
 
-  <div class="filters">
-    <strong>Filtres</strong>
-    <label><input type="checkbox" id="filterGreen" checked> 🟢 Safe</label>
-    <label><input type="checkbox" id="filterOrange" checked> 🟠 Moyen</label>
-    <label><input type="checkbox" id="filterRed" checked> 🔴 Dangereux</label>
-  </div>
-</div>
+  <script>
+    // =========================
+    // CONFIG
+    // =========================
+    const SHEET_TSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFChkNLfpGAACMs5Jlj-ljpPakGQrlQW3Jd-zvq8mCJ3vEqz6Cva4oLQ5/pub?output=tsv";
 
-<div id="map"></div>
+    const GOOGLE_FORM_BASE =
+      "https://docs.google.com/forms/d/e/1FAIpQLScvtTYbWyZKuAvAhX1Xhl2eM-WEaRci7QqB7MvXIN-BdwYciQ/viewform?usp=pp_url";
 
-<div id="searchBox">
-  <input type="text" id="searchInput" placeholder="Rechercher un club ou une adresse...">
-</div>
+    // Form field IDs
+    const FORM_CLUB = "entry.1761113382";
+    const FORM_ADDRESS = "entry.1236097005";
+    const FORM_LAT = "entry.2100892865";
+    const FORM_LON = "entry.1484112050";
 
-<script>
-var map = L.map('map').setView([46.6, 2.4], 6);
+    const NOMINATIM_URL = "https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&q=";
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom:19
-}).addTo(map);
+    // Dedup settings (coords rounding)
+    const DEDUP_DECIMALS = 4; // ~11m at equator, enough to merge duplicates
 
-let markers = [];
+    // =========================
+    // MAP
+    // =========================
+    const map = L.map("map", { worldCopyJump: true }).setView([46.6, 2.4], 6);
 
-function loadMarkers() {
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap"
+    }).addTo(map);
 
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
+    const markerLayer = L.layerGroup().addTo(map);
 
-  fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vS_hj7_w7FAra9Ko-QV3XrOFChkNLfpGAACMs5Jlj-ljpPakGQrlQW3Jd-zvq8mCJ3vEqz6Cva4oLQ5/pub?output=tsv")
-    .then(res => res.text())
-    .then(text => {
+    // Parsed + deduped rows shown as markers
+    let points = []; // { club, address, lat, lon, foam, danger, color, reportsCount, redsCount, cityGuess }
+    let markerRefs = []; // store markers to manage bounds
+    let nearFilter = null; // { lat, lon, radiusKm }
+    let selectedPlace = null; // from search { label, lat, lon }
+
+    // =========================
+    // UI refs
+    // =========================
+    const filterGreen = document.getElementById("filterGreen");
+    const filterOrange = document.getElementById("filterOrange");
+    const filterRed = document.getElementById("filterRed");
+    const onlyHallOfShame = document.getElementById("onlyHallOfShame");
+
+    const kpiTotal = document.getElementById("kpiTotal");
+    const kpiGreen = document.getElementById("kpiGreen");
+    const kpiOrange = document.getElementById("kpiOrange");
+    const kpiRed = document.getElementById("kpiRed");
+    const lastUpdate = document.getElementById("lastUpdate");
+
+    const btnRefresh = document.getElementById("btnRefresh");
+
+    const searchInput = document.getElementById("searchInput");
+    const resultsBox = document.getElementById("resultsBox");
+    const addHereBox = document.getElementById("addHereBox");
+    const addHereAddr = document.getElementById("addHereAddr");
+    const btnAddHere = document.getElementById("btnAddHere");
+
+    const btnLocate = document.getElementById("btnLocate");
+    const btnClearNear = document.getElementById("btnClearNear");
+    const radiusKm = document.getElementById("radiusKm");
+    const nearHint = document.getElementById("nearHint");
+
+    const rankClubs = document.getElementById("rankClubs");
+    const rankCities = document.getElementById("rankCities");
+
+    // =========================
+    // Helpers
+    // =========================
+    function nowLabel() {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2,"0");
+      return `${pad(d.getDate())}/${pad(d.getMonth()+1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function colorHex(color){
+      const css = getComputedStyle(document.documentElement);
+      if (color === "green") return css.getPropertyValue("--green").trim();
+      if (color === "orange") return css.getPropertyValue("--orange").trim();
+      return css.getPropertyValue("--red").trim();
+    }
+
+    function dangerToColor(dangerText){
+      const t = (dangerText || "");
+      if (t.includes("🟢")) return "green";
+      if (t.includes("🟠")) return "orange";
+      return "red";
+    }
+
+    function severityRank(color){
+      // red highest
+      if (color === "red") return 3;
+      if (color === "orange") return 2;
+      return 1;
+    }
+
+    function normalizeName(s){
+      return (s || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-z0-9]+/g," ")
+        .trim();
+    }
+
+    function roundCoord(n){
+      const f = Math.pow(10, DEDUP_DECIMALS);
+      return Math.round(n * f) / f;
+    }
+
+    function dedupKey(club, lat, lon){
+      const n = normalizeName(club);
+      return `${n}::${roundCoord(lat)}::${roundCoord(lon)}`;
+    }
+
+    // Haversine distance (km)
+    function distKm(lat1, lon1, lat2, lon2){
+      const R = 6371;
+      const toRad = (x) => (x * Math.PI) / 180;
+      const dLat = toRad(lat2-lat1);
+      const dLon = toRad(lon2-lon1);
+      const a =
+        Math.sin(dLat/2)**2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+      return 2 * R * Math.asin(Math.sqrt(a));
+    }
+
+    function guessCity(address){
+      if (!address) return "";
+      // Heuristique : si on trouve un code postal 5 chiffres, on prend le segment suivant
+      const parts = address.split(",").map(p => p.trim()).filter(Boolean);
+      for (let i=0;i<parts.length;i++){
+        if (/^\d{5}$/.test(parts[i]) && parts[i+1]) return parts[i+1];
+        // parfois le code postal est collé dans un segment, ex "78850 Thiverval-Grignon"
+        const m = parts[i].match(/\b\d{5}\b\s+(.+)$/);
+        if (m && m[1]) return m[1].trim();
+      }
+      // fallback : avant-dernier segment
+      if (parts.length >= 2) return parts[parts.length-2];
+      return parts[parts.length-1] || "";
+    }
+
+    function passesColorFilters(color){
+      if (onlyHallOfShame.checked) return color === "red";
+      if (color === "green" && !filterGreen.checked) return false;
+      if (color === "orange" && !filterOrange.checked) return false;
+      if (color === "red" && !filterRed.checked) return false;
+      return true;
+    }
+
+    function passesNearFilter(p){
+      if (!nearFilter) return true;
+      const d = distKm(nearFilter.lat, nearFilter.lon, p.lat, p.lon);
+      return d <= nearFilter.radiusKm;
+    }
+
+    function buildShareUrl(lat, lon, zoom){
+      const base = window.location.origin + window.location.pathname;
+      const z = Math.max(3, Math.min(19, zoom || 16));
+      return `${base}#z=${z}&lat=${lat.toFixed(6)}&lon=${lon.toFixed(6)}`;
+    }
+
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        return true;
+      }catch(e){
+        // fallback
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand("copy"); } catch(_) {}
+        document.body.removeChild(ta);
+        return true;
+      }
+    }
+
+    function popupHTML(p){
+      const pill =
+        p.color === "green" ? `<span class="pill">🟢 Safe</span>` :
+        p.color === "orange" ? `<span class="pill">🟠 Moyen</span>` :
+        `<span class="pill">🔴 Dangereux</span>`;
+
+      const foam = p.foam ? `<span class="pill">🧽 Mousse: ${p.foam}</span>` : "";
+
+      const reports = p.reportsCount > 1 ? `<span class="pill">📌 ${p.reportsCount} signalements</span>` : "";
+      const reds = p.redsCount > 0 ? `<span class="pill">🔴 ${p.redsCount} rouge(s)</span>` : "";
+
+      return `
+        <div class="popupTitle">${p.club || "Club"}</div>
+        <div class="popupAddr">${p.address || ""}</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          ${pill}${foam}${reports}${reds}
+        </div>
+        <div class="popActions">
+          <button class="popBtn" data-action="share">🔗 Copier lien</button>
+          <button class="popBtn" data-action="zoom">🎯 Zoom</button>
+        </div>
+      `;
+    }
+
+    function updateRankings(){
+      // Top clubs by redsCount (deduped points)
+      const topClubs = [...points]
+        .filter(p => p.redsCount > 0)
+        .sort((a,b) => b.redsCount - a.redsCount)
+        .slice(0,5);
+
+      // Top cities by sum redsCount
+      const cityMap = new Map();
+      for (const p of points){
+        if (p.redsCount <= 0) continue;
+        const city = p.cityGuess || "—";
+        cityMap.set(city, (cityMap.get(city) || 0) + p.redsCount);
+      }
+      const topCities = [...cityMap.entries()]
+        .sort((a,b) => b[1]-a[1])
+        .slice(0,5);
+
+      rankClubs.innerHTML = topClubs.length
+        ? topClubs.map((p, idx) => `
+            <div class="rankItem" title="${p.club}">
+              <div class="name">${idx+1}. ${p.club}</div>
+              <div class="count">${p.redsCount}</div>
+            </div>
+          `).join("")
+        : `<div class="hint" style="margin-top:10px;">Pas encore de 🔴 (ou pas de données).</div>`;
+
+      rankCities.innerHTML = topCities.length
+        ? topCities.map((c, idx) => `
+            <div class="rankItem" title="${c[0]}">
+              <div class="name">${idx+1}. ${c[0]}</div>
+              <div class="count">${c[1]}</div>
+            </div>
+          `).join("")
+        : ``;
+    }
+
+    function updateKPIs(){
+      // KPIs based on deduped points (clubs)
+      const total = points.length;
+      const greens = points.filter(p => p.color === "green").length;
+      const oranges = points.filter(p => p.color === "orange").length;
+      const reds = points.filter(p => p.color === "red").length;
+
+      kpiTotal.textContent = total;
+      kpiGreen.textContent = greens;
+      kpiOrange.textContent = oranges;
+      kpiRed.textContent = reds;
+    }
+
+    function zoomToVisibleMarkers(){
+      if (markerRefs.length === 0) return;
+      const bounds = L.latLngBounds(markerRefs.map(m => m.getLatLng()));
+      map.fitBounds(bounds.pad(0.25));
+    }
+
+    function renderMarkers({autoZoomOnHall=false} = {}){
+      markerLayer.clearLayers();
+      markerRefs = [];
+
+      for (const p of points){
+        if (!passesColorFilters(p.color)) continue;
+        if (!passesNearFilter(p)) continue;
+
+        const hex = colorHex(p.color);
+
+        const m = L.circleMarker([p.lat, p.lon], {
+          radius: 10,
+          weight: 2,
+          color: hex,
+          fillColor: hex,
+          fillOpacity: 0.85
+        });
+
+        m.on("popupopen", (e) => {
+          const el = e.popup.getElement();
+          if (!el) return;
+          el.querySelectorAll("button[data-action]").forEach(btn => {
+            btn.addEventListener("click", async () => {
+              const act = btn.getAttribute("data-action");
+              if (act === "zoom") {
+                map.setView([p.lat, p.lon], 17);
+              }
+              if (act === "share") {
+                const url = buildShareUrl(p.lat, p.lon, map.getZoom());
+                await copyText(url);
+                btn.textContent = "✅ Lien copié";
+                setTimeout(()=> btn.textContent = "🔗 Copier lien", 1200);
+              }
+            });
+          });
+        });
+
+        m.bindPopup(popupHTML(p), { maxWidth: 340 });
+        m.addTo(markerLayer);
+        markerRefs.push(m);
+      }
+
+      updateKPIs();
+      updateRankings();
+
+      if (autoZoomOnHall && onlyHallOfShame.checked) {
+        // zoom only on visible red markers
+        zoomToVisibleMarkers();
+      }
+    }
+
+    // =========================
+    // Load data from Sheet TSV + Dedup
+    // =========================
+    async function loadSheet(){
+      const res = await fetch(SHEET_TSV_URL, { cache: "no-store" });
+      const text = await res.text();
 
       const rows = text.trim().split("\n");
+      if (rows.length <= 1) {
+        points = [];
+        renderMarkers();
+        lastUpdate.textContent = nowLabel();
+        return;
+      }
+
+      // header:
+      // 0 Horodateur
+      // 1 Nom du club
+      // 2 Adresse complète
+      // 3 Latitude
+      // 4 Longitude
+      // 5 Mousse ?
+      // 6 Niveau de danger
+      // 7 Commentaire
       rows.shift();
 
-      let total=0, green=0, orange=0, red=0;
+      const buckets = new Map();
 
-      rows.forEach(row => {
-
+      for (const row of rows){
         const cols = row.split("\t");
+        if (cols.length < 7) continue;
 
-        const club = cols[1];
-        const address = cols[2];
-        const lat = parseFloat(cols[3]);
-        const lon = parseFloat(cols[4]);
-        const danger = cols[6];
+        const club = cols[1] || "";
+        const address = cols[2] || "";
+        const lat = Number(cols[3]);
+        const lon = Number(cols[4]);
+        const foam = cols[5] || "";
+        const danger = cols[6] || "";
+        const color = dangerToColor(danger);
 
-        if (!lat || !lon) return;
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
 
-        total++;
+        const key = dedupKey(club, lat, lon);
 
-        let color="red";
-        red++;
+        if (!buckets.has(key)){
+          buckets.set(key, {
+            club,
+            address,
+            lat,
+            lon,
+            foam,
+            danger,
+            color,
+            reportsCount: 1,
+            redsCount: color === "red" ? 1 : 0,
+            cityGuess: guessCity(address),
+            // keep max severity among duplicates
+            maxSeverity: severityRank(color)
+          });
+        } else {
+          const b = buckets.get(key);
+          b.reportsCount += 1;
+          if (color === "red") b.redsCount += 1;
 
-        if (danger.includes("🟢")) { color="green"; green++; red--; }
-        if (danger.includes("🟠")) { color="orange"; orange++; red--; }
+          // keep the "worst" color among duplicates
+          const sev = severityRank(color);
+          if (sev > b.maxSeverity) {
+            b.maxSeverity = sev;
+            b.color = color;
+            b.danger = danger;
+          }
+          // prefer the most complete address
+          if ((address || "").length > (b.address || "").length) b.address = address;
+          // keep foam if present
+          if (!b.foam && foam) b.foam = foam;
+        }
+      }
 
-        if (
-          (color==="green" && !filterGreen.checked) ||
-          (color==="orange" && !filterOrange.checked) ||
-          (color==="red" && !filterRed.checked)
-        ) return;
+      points = [...buckets.values()];
 
-        const marker = L.circleMarker([lat,lon],{
-          radius:9,
-          color:color,
-          fillColor:color,
-          fillOpacity:0.85
-        })
-        .addTo(map)
-        .bindPopup(`
-          <strong>${club}</strong><br>
-          <small>${address}</small><br><br>
-          <b>${danger}</b>
-        `);
+      // Update timestamp
+      lastUpdate.textContent = nowLabel();
 
-        markers.push(marker);
+      // Render markers
+      renderMarkers();
+    }
 
-      });
+    // =========================
+    // Search (Nominatim) in sidebar
+    // =========================
+    let searchTimer = null;
 
-      totalCount.textContent=total;
-      greenCount.textContent=green;
-      orangeCount.textContent=orange;
-      redCount.textContent=red;
+    function showResults(items){
+      resultsBox.innerHTML = "";
+      if (!items.length){
+        resultsBox.style.display = "block";
+        resultsBox.innerHTML = `<div style="padding:10px 10px; font-size:13px; color:var(--muted);">Aucun résultat.</div>`;
+        return;
+      }
+      resultsBox.style.display = "block";
+      for (const it of items){
+        const btn = document.createElement("button");
+        btn.className = "resultBtn";
+        btn.type = "button";
+        btn.textContent = it.display_name || "";
+        btn.addEventListener("click", () => {
+          const lat = Number(it.lat);
+          const lon = Number(it.lon);
+          const label = it.display_name || "";
 
+          if (Number.isFinite(lat) && Number.isFinite(lon)) {
+            map.setView([lat, lon], 16);
+          }
+
+          selectedPlace = { label, lat, lon };
+          addHereAddr.textContent = label;
+          addHereBox.style.display = "block";
+
+          resultsBox.style.display = "none";
+          resultsBox.innerHTML = "";
+        });
+        resultsBox.appendChild(btn);
+      }
+    }
+
+    async function runSearch(q){
+      if (q.length < 3){
+        resultsBox.style.display = "none";
+        resultsBox.innerHTML = "";
+        return;
+      }
+
+      resultsBox.style.display = "block";
+      resultsBox.innerHTML = `<div style="padding:10px 10px; font-size:13px; color:var(--muted);">Recherche…</div>`;
+
+      try{
+        const res = await fetch(NOMINATIM_URL + encodeURIComponent(q), { cache: "no-store" });
+        const data = await res.json();
+        showResults(Array.isArray(data) ? data : []);
+      }catch(e){
+        resultsBox.style.display = "block";
+        resultsBox.innerHTML = `<div style="padding:10px 10px; font-size:13px; color:var(--muted);">Erreur de recherche. Réessaie.</div>`;
+        console.error(e);
+      }
+    }
+
+    searchInput.addEventListener("input", () => {
+      clearTimeout(searchTimer);
+      const q = searchInput.value.trim();
+      searchTimer = setTimeout(() => runSearch(q), 350);
     });
-}
 
-loadMarkers();
-
-filterGreen.onchange=loadMarkers;
-filterOrange.onchange=loadMarkers;
-filterRed.onchange=loadMarkers;
-
-searchInput.addEventListener("input", function(){
-
-  const query=this.value.trim();
-  if(query.length<3) return;
-
-  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
-    .then(res=>res.json())
-    .then(data=>{
-      if(!data.length) return;
-      map.setView([data[0].lat,data[0].lon],16);
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        clearTimeout(searchTimer);
+        runSearch(searchInput.value.trim());
+      }
     });
 
-});
-</script>
+    // Add here button -> open Google Form with prefill
+    btnAddHere.addEventListener("click", () => {
+      if (!selectedPlace) return;
 
+      const clubName = (selectedPlace.label.split(",")[0] || selectedPlace.label).trim();
+      const lat = Number(selectedPlace.lat);
+      const lon = Number(selectedPlace.lon);
+
+      const url =
+        `${GOOGLE_FORM_BASE}` +
+        `&${FORM_CLUB}=${encodeURIComponent(clubName)}` +
+        `&${FORM_ADDRESS}=${encodeURIComponent(selectedPlace.label)}` +
+        `&${FORM_LAT}=${encodeURIComponent(lat.toFixed(7))}` +
+        `&${FORM_LON}=${encodeURIComponent(lon.toFixed(7))}`;
+
+      window.open(url, "_blank");
+    });
+
+    // =========================
+    // Near me
+    // =========================
+    btnLocate.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        alert("La géolocalisation n’est pas disponible sur ce navigateur.");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const r = Number(radiusKm.value || 10);
+
+          nearFilter = { lat, lon, radiusKm: r };
+          nearHint.style.display = "block";
+          nearHint.textContent = `Filtre “autour de moi” actif : ${r} km.`;
+
+          map.setView([lat, lon], 12);
+          renderMarkers();
+        },
+        () => {
+          alert("Impossible de récupérer ta position (permission refusée ?).");
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+      );
+    });
+
+    radiusKm.addEventListener("change", () => {
+      if (!nearFilter) return;
+      nearFilter.radiusKm = Number(radiusKm.value || 10);
+      nearHint.style.display = "block";
+      nearHint.textContent = `Filtre “autour de moi” actif : ${nearFilter.radiusKm} km.`;
+      renderMarkers();
+    });
+
+    btnClearNear.addEventListener("click", () => {
+      nearFilter = null;
+      nearHint.style.display = "none";
+      renderMarkers();
+    });
+
+    // =========================
+    // Filters
+    // =========================
+    filterGreen.addEventListener("change", () => renderMarkers());
+    filterOrange.addEventListener("change", () => renderMarkers());
+    filterRed.addEventListener("change", () => renderMarkers());
+
+    onlyHallOfShame.addEventListener("change", () => {
+      // if Hall of Shame enabled, we auto-zoom on visible reds
+      renderMarkers({autoZoomOnHall:true});
+    });
+
+    // =========================
+    // Refresh
+    // =========================
+    btnRefresh.addEventListener("click", () => {
+      loadSheet().catch(console.error);
+    });
+
+    // =========================
+    // Deep link from URL hash (share)
+    // format: #z=16&lat=48.123&lon=2.456
+    // =========================
+    function applyHash(){
+      const h = (window.location.hash || "").replace(/^#/, "");
+      if (!h) return;
+      const params = new URLSearchParams(h);
+      const z = Number(params.get("z"));
+      const lat = Number(params.get("lat"));
+      const lon = Number(params.get("lon"));
+      if (Number.isFinite(z) && Number.isFinite(lat) && Number.isFinite(lon)){
+        map.setView([lat, lon], z);
+      }
+    }
+    window.addEventListener("hashchange", applyHash);
+
+    // =========================
+    // Initial load + auto refresh
+    // =========================
+    applyHash();
+    loadSheet().catch(console.error);
+    setInterval(() => loadSheet().catch(() => {}), 120000);
+  </script>
 </body>
 </html>
